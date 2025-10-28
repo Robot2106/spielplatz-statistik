@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Spielplatz Statistik">
+    <link rel="manifest" href="manifest.json">
+    <title>Internet-Spielplatz Hemmingen - Besucherstatistik</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .counter {
+            background: #f0f4ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 18px;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .status-message {
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .radio-group, .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .radio-option, .checkbox-option {
+            position: relative;
+        }
+
+        .radio-option input, .checkbox-option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .radio-option label, .checkbox-option label {
+            display: block;
+            padding: 15px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .radio-option input:checked + label,
+        .checkbox-option input:checked + label {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .radio-option label:hover,
+        .checkbox-option label:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .number-input-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .number-btn {
+            width: 50px;
+            height: 50px;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-size: 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .number-btn:hover {
+            background: #5568d3;
+            transform: scale(1.1);
+        }
+
+        .number-btn:active {
+            transform: scale(0.95);
+        }
+
+        .number-display {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            z-index: 1000;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .password-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .modal-btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .modal-btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .admin-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .admin-panel h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .admin-stats {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .admin-stats p {
+            margin: 8px 0;
+            line-height: 1.6;
+        }
+
+        .admin-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .admin-actions button {
+            flex: 1;
+            min-width: 150px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .export-btn {
+            background: #28a745;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .logout-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .radio-group, .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Internet-Spielplatz Hemmingen</h1>
+        <p class="subtitle">Willkommen! Bitte erfassen Sie Ihren Besuch:</p>
+
+        <div id="statusMessage"></div>
+
+        <div class="counter">
+            <span id="visitCounter">Gespeicherte Besuche: 0</span>
+        </div>
+
+        <div id="adminPanel" style="display: none;"></div>
+
+        <form id="visitorForm">
+            <div class="form-group">
+                <label>Ich bin... *</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="mutter" name="personType" value="Mutter" required>
+                        <label for="mutter">👩 Mutter</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="vater" name="personType" value="Vater" required>
+                        <label for="vater">👨 Vater</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="oma" name="personType" value="Oma" required>
+                        <label for="oma">👵 Oma</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="opa" name="personType" value="Opa" required>
+                        <label for="opa">👴 Opa</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="sonstiges" name="personType" value="Sonstiges" required>
+                        <label for="sonstiges">👤 Sonstiges</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Anzahl der Kinder *</label>
+                <div class="number-input-group">
+                    <button type="button" class="number-btn" id="decreaseBtn">−</button>
+                    <span class="number-display" id="childrenCount">1</span>
+                    <button type="button" class="number-btn" id="increaseBtn">+</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Alter der Kinder * (Mehrfachauswahl möglich)</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="age01" name="childrenAges" value="0-1 Jahre">
+                        <label for="age01">0-1 Jahre</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="age23" name="childrenAges" value="2-3 Jahre">
+                        <label for="age23">2-3 Jahre</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="age45" name="childrenAges" value="4-5 Jahre">
+                        <label for="age45">4-5 Jahre</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="age67" name="childrenAges" value="6-7 Jahre">
+                        <label for="age67">6-7 Jahre</label>
+                    </div>
+                    <div class="checkbox-option">
+                        <input type="checkbox" id="age8plus" name="childrenAges" value="8+ Jahre">
+                        <label for="age8plus">8+ Jahre</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Wir kommen aus... *</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="hemmingen" name="location" value="Hemmingen" required>
+                        <label for="hemmingen">📍 Hemmingen</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="umgebung" name="location" value="Nähere Umgebung" required>
+                        <label for="umgebung">🗺️ Nähere Umgebung</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Wir haben vom Internet-Spielplatz erfahren über... *</label>
+                <div class="checkbox-group">
+                    <div class="radio-option">
+                        <input type="radio" id="freunde" name="heardFrom" value="Freunde" required>
+                        <label for="freunde">👥 Freunde</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="amtsblatt" name="heardFrom" value="Amtsblatt" required>
+                        <label for="amtsblatt">📰 Amtsblatt</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="gemeinde" name="heardFrom" value="Christusgemeinde Hemmingen" required>
+                        <label for="gemeinde">⛪ Christusgemeinde Hemmingen</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="internet" name="heardFrom" value="Internet/Social Media" required>
+                        <label for="internet">🌐 Internet/Social Media</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="sonstigesHF" name="heardFrom" value="Sonstiges" required>
+                        <label for="sonstigesHF">💬 Sonstiges</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">✓ Absenden</button>
+        </form>
+    </div>
+
+    <button class="admin-btn" id="adminBtn">🔒 Admin-Bereich</button>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h2>Admin-Login</h2>
+            <input type="password" id="passwordInput" class="password-input" placeholder="Passwort eingeben">
+            <div id="loginError" style="color: #dc3545; margin-bottom: 10px; display: none;">Falsches Passwort</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="cancelBtn">Abbrechen</button>
+                <button class="modal-btn modal-btn-primary" id="loginBtn">Anmelden</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // IndexedDB Setup
+        let db;
+        const DB_NAME = 'SpielplatzDB';
+        const STORE_NAME = 'visits';
+        const ADMIN_PASSWORD = 'spielplatz2025';
+        let isAdminLoggedIn = false;
+        let childrenCount = 1;
+
+        // Initialize Database
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+
+                request.onerror = () => {
+                    showMessage('Fehler beim Laden der Datenbank', 'error');
+                    reject(request.error);
+                };
+
+                request.onsuccess = () => {
+                    db = request.result;
+                    showMessage('✓ Bereit', 'success');
+                    setTimeout(() => hideMessage(), 2000);
+                    resolve(db);
+                };
+
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+            });
+        }
+
+        // Save visit to IndexedDB
+        function saveVisit(visitData) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.add(visitData);
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Get all visits
+        function getAllVisits() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.getAll();
+
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Clear all visits
+        function clearAllVisits() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.clear();
+
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Update visit counter
+        async function updateCounter() {
+            const visits = await getAllVisits();
+            document.getElementById('visitCounter').textContent = `Gespeicherte Besuche: ${visits.length}`;
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const msgDiv = document.getElementById('statusMessage');
+            msgDiv.textContent = text;
+            msgDiv.className = `status-message status-${type}`;
+            msgDiv.style.display = 'block';
+        }
+
+        function hideMessage() {
+            document.getElementById('statusMessage').style.display = 'none';
+        }
+
+        // Format date
+        function formatDate(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            return `${day}.${month}.${year} ${hours}:${minutes}`;
+        }
+
+        // Children count controls
+        document.getElementById('decreaseBtn').addEventListener('click', () => {
+            if (childrenCount > 1) {
+                childrenCount--;
+                document.getElementById('childrenCount').textContent = childrenCount;
+            }
+        });
+
+        document.getElementById('increaseBtn').addEventListener('click', () => {
+            if (childrenCount < 10) {
+                childrenCount++;
+                document.getElementById('childrenCount').textContent = childrenCount;
+            }
+        });
+
+        // Form submission
+        document.getElementById('visitorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(e.target);
+            const personType = formData.get('personType');
+            const location = formData.get('location');
+            const heardFrom = formData.get('heardFrom');
+            const childrenAges = formData.getAll('childrenAges');
+
+            // Validation
+            if (!personType || !location || !heardFrom) {
+                showMessage('Bitte füllen Sie alle Pflichtfelder aus', 'error');
+                return;
+            }
+
+            if (childrenAges.length === 0) {
+                showMessage('Bitte wählen Sie mindestens eine Altersgruppe', 'error');
+                return;
+            }
+
+            // Create visit object
+            const visit = {
+                timestamp: new Date().toISOString(),
+                personType: personType,
+                numberOfChildren: childrenCount,
+                childrenAges: childrenAges,
+                location: location,
+                heardFrom: heardFrom
+            };
+
+            try {
+                await saveVisit(visit);
+                showMessage('✓ Vielen Dank! Ihr Besuch wurde erfasst.', 'success');
+                await updateCounter();
+
+                // Reset form
+                setTimeout(() => {
+                    e.target.reset();
+                    childrenCount = 1;
+                    document.getElementById('childrenCount').textContent = childrenCount;
+                    hideMessage();
+                }, 2000);
+            } catch (error) {
+                showMessage('Fehler beim Speichern', 'error');
+                console.error(error);
+            }
+        });
+
+        // Admin login
+        document.getElementById('adminBtn').addEventListener('click', () => {
+            if (isAdminLoggedIn) {
+                showAdminPanel();
+            } else {
+                document.getElementById('loginModal').classList.add('active');
+                document.getElementById('passwordInput').focus();
+            }
+        });
+
+        document.getElementById('cancelBtn').addEventListener('click', () => {
+            document.getElementById('loginModal').classList.remove('active');
+            document.getElementById('passwordInput').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        });
+
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const password = document.getElementById('passwordInput').value;
+            if (password === ADMIN_PASSWORD) {
+                isAdminLoggedIn = true;
+                document.getElementById('loginModal').classList.remove('active');
+                document.getElementById('passwordInput').value = '';
+                document.getElementById('loginError').style.display = 'none';
+                showAdminPanel();
+            } else {
+                document.getElementById('loginError').style.display = 'block';
+            }
+        });
+
+        // Allow Enter key for login
+        document.getElementById('passwordInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
+            }
+        });
+
+        // Show admin panel
+        async function showAdminPanel() {
+            const visits = await getAllVisits();
+            const stats = calculateStats(visits);
+
+            const panel = document.getElementById('adminPanel');
+            panel.innerHTML = `
+                <div class="admin-panel">
+                    <h3>🔓 Admin-Bereich</h3>
+                    <div class="admin-stats">
+                        <p><strong>Gespeicherte Einträge:</strong> ${visits.length}</p>
+                        <p><strong>Häufigster Besuchertyp:</strong> ${stats.mostCommonPerson || 'N/A'}</p>
+                        <p><strong>Häufigste Altersgruppe:</strong> ${stats.mostCommonAge || 'N/A'}</p>
+                        <p><strong>Häufigste Informationsquelle:</strong> ${stats.mostCommonSource || 'N/A'}</p>
+                    </div>
+                    <div class="admin-actions">
+                        <button class="export-btn" onclick="exportCSV()">📥 Daten exportieren (CSV)</button>
+                        <button class="reset-btn" onclick="resetData()">🗑️ Daten zurücksetzen</button>
+                        <button class="logout-btn" onclick="logout()">🚪 Abmelden</button>
+                    </div>
+                </div>
+            `;
+            panel.style.display = 'block';
+            document.getElementById('visitorForm').style.display = 'none';
+        }
+
+        // Calculate statistics
+        function calculateStats(visits) {
+            if (visits.length === 0) return {};
+
+            const personTypes = {};
+            const ages = {};
+            const sources = {};
+
+            visits.forEach(visit => {
+                personTypes[visit.personType] = (personTypes[visit.personType] || 0) + 1;
+                visit.childrenAges.forEach(age => {
+                    ages[age] = (ages[age] || 0) + 1;
+                });
+                sources[visit.heardFrom] = (sources[visit.heardFrom] || 0) + 1;
+            });
+
+            return {
+                mostCommonPerson: Object.keys(personTypes).reduce((a, b) => personTypes[a] > personTypes[b] ? a : b),
+                mostCommonAge: Object.keys(ages).length > 0 ? Object.keys(ages).reduce((a, b) => ages[a] > ages[b] ? a : b) : 'N/A',
+                mostCommonSource: Object.keys(sources).reduce((a, b) => sources[a] > sources[b] ? a : b)
+            };
+        }
+
+        // Export CSV
+        async function exportCSV() {
+            const visits = await getAllVisits();
+
+            if (visits.length === 0) {
+                alert('Keine Daten zum Exportieren vorhanden');
+                return;
+            }
+
+            let csv = 'Datum/Uhrzeit;Person;Anzahl Kinder;Alter der Kinder;Herkunft;Erfahren über
+';
+
+            visits.forEach(visit => {
+                csv += `${formatDate(visit.timestamp)};${visit.personType};${visit.numberOfChildren};${visit.childrenAges.join(', ')};${visit.location};${visit.heardFrom}
+`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `spielplatz-statistik-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Reset data
+        async function resetData() {
+            if (confirm('Möchten Sie wirklich ALLE Daten unwiderruflich löschen?')) {
+                try {
+                    await clearAllVisits();
+                    await updateCounter();
+                    showMessage('✓ Alle Daten wurden gelöscht', 'success');
+                    logout();
+                } catch (error) {
+                    showMessage('Fehler beim Löschen', 'error');
+                }
+            }
+        }
+
+        // Logout
+        function logout() {
+            isAdminLoggedIn = false;
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('visitorForm').style.display = 'block';
+            showMessage('✓ Abgemeldet', 'info');
+            setTimeout(() => hideMessage(), 2000);
+        }
+
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            showMessage('Daten werden geladen...', 'info');
+            await initDB();
+            await updateCounter();
+        });
+    </script>
+</body>
+</html>
