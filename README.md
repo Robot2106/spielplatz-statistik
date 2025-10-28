@@ -1,4 +1,4 @@
-# Internet-Spielplatz Hemmingen - Besucherstatistik
+# Internet-Spielplatz - Besucherstatistik
 
 
 ## Auf iPad installieren
